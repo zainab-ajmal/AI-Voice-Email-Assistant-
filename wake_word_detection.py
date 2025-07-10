@@ -3,48 +3,20 @@ import pyaudio
 import struct
 import numpy as np
 import wave
-import time
 import webrtcvad
-import whisper
-#from pydub import AudioSegment
-<<<<<<< HEAD
-import os
-from dotenv import load_dotenv
+import collections
+import time
 
 
-# Load environment variables
-load_dotenv()
-access_key = os.getenv("PORCUPINE_ACCESS_KEY")
-
-#Load Whisper model
-model = whisper.load_model("small")
-
-# Initialize Porcupine with access key from env
-porcupine = pvporcupine.create(
-     access_key=access_key,
-     keyword_paths=['Hey-Inbox_en_windows_v3_0_0.ppn']  #defining path
-=======
-
-# Initialize Whisper model
-model = whisper.load_model("small")
-
-# Initialize Porcupine
-porcupine = pvporcupine.create(
-     access_key='oIdo/FHEb2dBhULDYSPLaj87kpM09DUuDtRhnvYPUwe94C5T0R9RtQ==', # my access_key from site
-     keyword_paths=['Hey-Inbox_en_windows_v3_0_0.ppn']  # e.g., 'porcupine.ppn' for default test
->>>>>>> origin/master
-)
-
-# Recording function with VAD
 def record_until_silence(filename="command.wav"):
-    CHUNK = 320
+    CHUNK = 320  # 20ms at 16kHz mono
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 16000
-    SILENCE_LIMIT = 3.0  # seconds
+    SILENCE_LIMIT = 3.0  # seconds of silence before ending
 
     vad = webrtcvad.Vad()
-    vad.set_mode(2)
+    vad.set_mode(2)  # 0=aggressive silence detection, 3=very sensitive
 
     p = pyaudio.PyAudio()
     stream = p.open(format=FORMAT, channels=CHANNELS,
@@ -54,6 +26,7 @@ def record_until_silence(filename="command.wav"):
     print("Recording command until silence...")
 
     frames = []
+    ring_buffer = collections.deque(maxlen=int(SILENCE_LIMIT * RATE / CHUNK))
     silence_start = None
 
     while True:
@@ -83,8 +56,15 @@ def record_until_silence(filename="command.wav"):
 
     print(f"Recording saved to {filename}")
 
-# Start audio stream for wake word detection
+
+# Initialize Porcupine
+porcupine = pvporcupine.create(
+    access_key='oIdo/FHEb2dBhULDYSPLaj87kpM09DUuDtRhnvYPUwe94C5T0R9RtQ==', # my access_key from site
+    keyword_paths=['Hey-Inbox_en_windows_v3_0_0.ppn']  # e.g., 'porcupine.ppn' for default test
+)
+
 pa = pyaudio.PyAudio()
+
 audio_stream = pa.open(
     rate=porcupine.sample_rate,
     channels=1,
@@ -103,17 +83,9 @@ try:
         result = porcupine.process(pcm)
         if result >= 0:
             print("Wake word detected!")
-
-            # Record command
             record_until_silence("command.wav")
-           # sound = AudioSegment.from_wav("command.wav")
-            #sound = sound.set_frame_rate(44100)
-            #sound.export("command_resampled.wav", format="wav")
-            # Transcribe recorded command using Whisper
-            print("Transcribing command...")
-            transcription = model.transcribe("command.wav", language="en", temperature=0)
 
-            print("Transcribed text:", transcription["text"])
+            # Here you will call your recording function after wake word detection
 
 except KeyboardInterrupt:
     print("Stopping...")
@@ -121,8 +93,4 @@ except KeyboardInterrupt:
 finally:
     audio_stream.close()
     pa.terminate()
-<<<<<<< HEAD
     porcupine.delete()
-=======
-    porcupine.delete()
->>>>>>> origin/master
