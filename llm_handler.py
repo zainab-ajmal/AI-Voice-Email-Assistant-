@@ -16,7 +16,8 @@ client = Groq(api_key=api_key)
 def process_with_llm(transcribed_text: str) -> str:
     prompt = f"""You are a smart voice email assistant. The user said: "{transcribed_text}". 
 Analyze it and determine whether it's a command to send an email, read email, or perform another email-related task. 
-Respond in valid JSON with fields like action, recipient (if any), subject, and body. You are an AI that extracts email commands. Output ONLY JSON with keys: action, recipient, subject, body. No explanations."""
+Respond in valid JSON with fields like action, recipient (if any), subject, and body. You are an AI that extracts email commands. Output ONLY JSON with keys: action, recipient, subject, body. No explanations.
+If no subject is mentioned, generate one based on the email body."""
 
     try:
         response = client.chat.completions.create(

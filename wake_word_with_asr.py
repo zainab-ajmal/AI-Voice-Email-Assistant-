@@ -7,7 +7,6 @@ import time
 import webrtcvad
 import whisper
 #from pydub import AudioSegment
-<<<<<<< HEAD
 import os
 from dotenv import load_dotenv
 
@@ -23,16 +22,6 @@ model = whisper.load_model("small")
 porcupine = pvporcupine.create(
      access_key=access_key,
      keyword_paths=['Hey-Inbox_en_windows_v3_0_0.ppn']  #defining path
-=======
-
-# Initialize Whisper model
-model = whisper.load_model("small")
-
-# Initialize Porcupine
-porcupine = pvporcupine.create(
-     access_key='oIdo/FHEb2dBhULDYSPLaj87kpM09DUuDtRhnvYPUwe94C5T0R9RtQ==', # my access_key from site
-     keyword_paths=['Hey-Inbox_en_windows_v3_0_0.ppn']  # e.g., 'porcupine.ppn' for default test
->>>>>>> origin/master
 )
 
 # Recording function with VAD
@@ -121,8 +110,4 @@ except KeyboardInterrupt:
 finally:
     audio_stream.close()
     pa.terminate()
-<<<<<<< HEAD
     porcupine.delete()
-=======
-    porcupine.delete()
->>>>>>> origin/master
