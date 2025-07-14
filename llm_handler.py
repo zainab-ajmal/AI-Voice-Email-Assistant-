@@ -31,3 +31,4 @@ If no subject is mentioned, generate one based on the email body."""
         return response.choices[0].message.content
     except Exception as e:
         return f"LLM error: {str(e)}"
+

@@ -23,7 +23,7 @@ def gmail_send_user(user_tokens, recipient, subject, body):
         refresh_token=user_tokens["refresh_token"],
         token_uri=user_tokens["token_uri"],
         client_id=user_tokens["client_id"],
-        client_secret=user_tokens["client_secret"],
+        client_secret=user_tokens["client_secret"],  
         scopes=user_tokens["scopes"]
     )
 

@@ -19,6 +19,7 @@ from gmail_metadata import get_user_metadata
 from gtts import gTTS
 import uuid
 from fastapi.responses import FileResponse
+from persona_modeler import generate_user_persona
 
 # Load environment
 load_dotenv()
@@ -130,7 +131,7 @@ model = whisper.load_model("small")
 @app.post("/send_email")
 def send_email_route():
     try:
-       # Step 1: Transcribe audio
+        # Step 1: Transcribe audio
         result = model.transcribe("command.wav")
         transcription = result["text"]
         print("🎤 Transcription:", transcription)
@@ -141,13 +142,21 @@ def send_email_route():
 
         # Step 3: Parse LLM response (assuming it's JSON string)
         email_data = json.loads(llm_response)
-
         recipient = email_data.get("recipient")
         subject = email_data.get("subject", "No Subject")
         body = email_data.get("body", "")
 
-        # Step 4: Send email
-        email_send_result = send_email(recipient, subject, body)
+        # 🔷 Step 4: Fetch user's tokens by email (_id) from MongoDB
+        # For now, hardcode your authorized email for testing
+        
+        user_email = os.getenv("SENDER_EMAIL")
+        
+        user_tokens = tokens_collection.find_one({"_id": user_email})
+        if not user_tokens:
+            return JSONResponse(status_code=400, content={"error": f"Tokens not found for user {user_email}. Please authorize first."})
+
+        # Step 5: Send email using Gmail API with user's tokens
+        email_send_result = gmail_send_user(user_tokens, recipient, subject, body)
         print("📧 Email Send Result:", email_send_result)
 
         return {
@@ -158,11 +167,8 @@ def send_email_route():
 
     except Exception as e:
         print("🔥 Error:", traceback.format_exc())
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(e)}
-        )
-
+        return JSONResponse(status_code=500, content={"error": str(e)})
+    
 @app.get("/get_metadata")
 def get_metadata():
     try:
@@ -212,4 +218,18 @@ def inbox_summary_audio():
         return FileResponse(filepath, media_type="audio/mpeg", filename=filename)
 
     except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/generate_persona")
+def generate_persona_route():
+    try:
+        user_email = os.getenv("SENDER_EMAIL")
+        if not user_email:
+            return JSONResponse(status_code=500, content={"error": "SENDER_EMAIL not set in .env."})
+
+        result = generate_user_persona(user_email)
+        return result
+
+    except Exception as e:
+        print("🔥 Error:", traceback.format_exc())
         return JSONResponse(status_code=500, content={"error": str(e)})
