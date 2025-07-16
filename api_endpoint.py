@@ -20,6 +20,7 @@ from gtts import gTTS
 import uuid
 from fastapi.responses import FileResponse
 from persona_modeler import generate_user_persona
+from embedding_cache import build_user_embedding_cache
 
 # Load environment
 load_dotenv()
@@ -172,7 +173,7 @@ def send_email_route():
 @app.get("/get_metadata")
 def get_metadata():
     try:
-        user_email = "zainab.ajmal68@gmail.com"
+        user_email = os.getenv("SENDER_EMAIL")
         metadata = get_user_metadata(user_email)
         return metadata
     except Exception as e:
@@ -233,3 +234,11 @@ def generate_persona_route():
     except Exception as e:
         print("🔥 Error:", traceback.format_exc())
         return JSONResponse(status_code=500, content={"error": str(e)})
+    
+    
+@app.get("/build_embedding_cache")
+def build_cache():
+    user_email = os.getenv("SENDER_EMAIL")
+    index, metadata = build_user_embedding_cache(user_email)
+    return {"message": f"Embedding cache built for {len(metadata)} emails"}
+
