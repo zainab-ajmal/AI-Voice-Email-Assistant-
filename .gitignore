@@ -1,21 +1,32 @@
-# Secrets & credentials
+# 🔐 Secrets & credentials
 .env
 credentials.json
-
-# OAuth token file generated after login
 token.json
 
-# Python bytecode cache
+# 🐍 Python cache and compiled files
 __pycache__/
 *.py[cod]
+*$py.class
 
-# Static files (if generated at runtime)
-static/
+# 🎧 Audio and temp files
+*.wav
+*.mp3
+*.m4a
+*.tmp
+*.log
 
-# Virtual environments
+# 🧠 Embedding & cache files
+cache/
+embedding_store/
+
+# ⚙️ Virtual environments
+venv/
 .venv/
 env/
 
+# 🖥️ IDE and OS junk
+.vscode/
+.DS_Store
 
-cache/
-embedding_store/
+# 📦 Static/runtime generated
+static/
