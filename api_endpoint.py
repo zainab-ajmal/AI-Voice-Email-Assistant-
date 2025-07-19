@@ -175,6 +175,7 @@ def send_email_route():
 def get_metadata():
     try:
         user_email = os.getenv("SENDER_EMAIL")
+        user_email = os.getenv("SENDER_EMAIL")
         metadata = get_user_metadata(user_email)
         return metadata
     except Exception as e:

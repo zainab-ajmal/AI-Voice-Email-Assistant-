@@ -1,0 +1,4 @@
+chnaged persona model with subjects and sign offs
+installed   pip install sentence-transformers faiss-cpu
+updated api_endpoint
+made embedding_cache.py
