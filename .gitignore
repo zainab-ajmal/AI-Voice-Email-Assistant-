@@ -15,3 +15,7 @@ static/
 # Virtual environments
 .venv/
 env/
+
+
+cache/
+embedding_store/

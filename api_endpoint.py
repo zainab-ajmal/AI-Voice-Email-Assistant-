@@ -8,7 +8,7 @@ import traceback
 from google_auth_oauthlib.flow import Flow
 from db import tokens_collection
 from gmail_api_sender import gmail_send_user
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request 
 from fastapi.responses import JSONResponse
 import json
 from googleapiclient.discovery import build
@@ -20,6 +20,8 @@ from gtts import gTTS
 import uuid
 from fastapi.responses import FileResponse
 from persona_modeler import generate_user_persona
+from embedding_cache import build_user_embedding_cache
+from embedding_cache import retrieve_similar_emails
 
 # Load environment
 load_dotenv()
@@ -172,7 +174,7 @@ def send_email_route():
 @app.get("/get_metadata")
 def get_metadata():
     try:
-        user_email = "zainab.ajmal68@gmail.com"
+        user_email = os.getenv("SENDER_EMAIL")
         metadata = get_user_metadata(user_email)
         return metadata
     except Exception as e:
@@ -232,4 +234,55 @@ def generate_persona_route():
 
     except Exception as e:
         print("🔥 Error:", traceback.format_exc())
+        return JSONResponse(status_code=500, content={"error": str(e)})
+    
+    
+@app.get("/build_embedding_cache")
+def build_cache():
+    user_email = os.getenv("SENDER_EMAIL")
+    index, metadata = build_user_embedding_cache(user_email)
+    return {"message": f"Embedding cache built for {len(metadata)} emails"}
+
+@app.post("/semantic_voice_search")
+def semantic_voice_search():
+    try:
+        # 1. Transcribe audio
+        result = model.transcribe("command.wav")
+        transcription = result["text"]
+        print("🎤 Transcribed:", transcription)
+
+        # 2. Convert transcription to clean query using LLM
+        llm_response = process_with_llm(f"Extract a short semantic email search phrase from: '{transcription}'")
+        
+        # Parse LLM response if it's a JSON string
+        if isinstance(llm_response, str):
+            llm_query = json.loads(llm_response)
+        else:
+            llm_query = llm_response
+        print("🔍 LLM Query:", llm_query)
+
+        # 3. Generate a usable search query string
+        query_parts = []
+        if llm_query.get("subject") and llm_query["subject"].lower() != "unknown":
+            query_parts.append(llm_query["subject"])
+        if llm_query.get("recipient"):
+            query_parts.append(f"from {llm_query['recipient']}")
+        if llm_query.get("body"):
+            query_parts.append(llm_query["body"])
+
+        query_str = " ".join(query_parts).strip()
+        print("🔎 Final Search Query:", query_str)
+
+        # 4. Use the search query string to fetch similar emails
+        user_email = os.getenv("SENDER_EMAIL")
+        results = retrieve_similar_emails(user_email, query_str)
+
+        return {
+            "transcription": transcription,
+            "llm_query": llm_query,
+            "query_used": query_str,
+            "matches": results
+        }
+
+    except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})

@@ -1,0 +1,16 @@
+-- no new library was installed
+
+changes in api_endpoint: 
+added semantic vocie search api_endpoint
+
+work done:
+we’re caching 50 emails first. then the user can ask something like:
+"what was the mail faiza sent me" the audio is transcribed,
+turned into a search query using the LLM, and passed to semantic search,
+which goes through the cached emails and returns the most relevant ones. 
+
+execution:
+1. go to localhost/docs
+2. transcribe audio
+3. build cache
+4. execute the semantic search
