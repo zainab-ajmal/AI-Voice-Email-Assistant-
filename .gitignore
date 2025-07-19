@@ -1,32 +1,36 @@
-# 🔐 Secrets & credentials
+# 🔒 Secrets & credentials
 .env
 credentials.json
 token.json
 
-# 🐍 Python cache and compiled files
+# 🧠 Model embedding or cache
+embedding_store/
+cache/
+
+# 🔄 Static files (runtime-generated)
+static/
+
+# 🐍 Python cache
 __pycache__/
 *.py[cod]
-*$py.class
+*.so
 
-# 🎧 Audio and temp files
-*.wav
-*.mp3
-*.m4a
-*.tmp
-*.log
-
-# 🧠 Embedding & cache files
-cache/
-embedding_store/
-
-# ⚙️ Virtual environments
-venv/
+# 💻 Virtual environments
 .venv/
 env/
+venv/
 
-# 🖥️ IDE and OS junk
+# 💬 VSCode/IDE settings
 .vscode/
-.DS_Store
+.idea/
 
-# 📦 Static/runtime generated
-static/
+# 💥 OS / Misc
+.DS_Store
+Thumbs.db
+
+# 📦 Package lock files (optional)
+Pipfile.lock
+poetry.lock
+
+# 🗂 Log files (if any)
+*.log
