@@ -1,21 +1,36 @@
-# Secrets & credentials
+# 🔒 Secrets & credentials
 .env
 credentials.json
-
-# OAuth token file generated after login
 token.json
 
-# Python bytecode cache
-__pycache__/
-*.py[cod]
+# 🧠 Model embedding or cache
+embedding_store/
+cache/
 
-# Static files (if generated at runtime)
+# 🔄 Static files (runtime-generated)
 static/
 
-# Virtual environments
+# 🐍 Python cache
+__pycache__/
+*.py[cod]
+*.so
+
+# 💻 Virtual environments
 .venv/
 env/
+venv/
 
+# 💬 VSCode/IDE settings
+.vscode/
+.idea/
 
-cache/
-embedding_store/
+# 💥 OS / Misc
+.DS_Store
+Thumbs.db
+
+# 📦 Package lock files (optional)
+Pipfile.lock
+poetry.lock
+
+# 🗂 Log files (if any)
+*.log
