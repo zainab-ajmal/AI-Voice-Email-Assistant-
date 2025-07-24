@@ -14,3 +14,18 @@ execution:
 2. transcribe audio
 3. build cache
 4. execute the semantic search
+
+---------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------
+
+New work added:
+1. made a new file called email_followup which will read out the text for user when asked + ask a follow up question about sending and approval etc. 
+2. made a new file named stt_handler which will convert the user's choice to text which will then be passed 
+3. made a new file named tts_handler for the text to speech conversion
+4. made a change in wake_word_with_asr (added the recording function for the email follow too and saving it in user_decision)
+5. added a new file titled "email_utils.py"
+
+for executing: 
+first go to authorize and tick and the checkboxes, then go to transcribe -> execute , then go to send -> execute, a voice prompt 
+will ask you whether you want to save it as draft, send or review. choose your option and the action will be performed. 

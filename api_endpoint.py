@@ -15,10 +15,13 @@ from gtts import gTTS
 import uuid
 from persona_modeler import generate_user_persona
 from embedding_cache import build_user_embedding_cache, retrieve_similar_emails
+from email_followup import speak_email_flow
 from gmail_label_manager import create_gmail_label
 from google.oauth2.credentials import Credentials
-#import openai
+from email_utils import gmail_send_user, save_to_drafts, open_email_in_editor
 import re
+from wake_word_with_asr import record_until_silence
+
 
 # Load environment variables
 load_dotenv()
@@ -26,6 +29,8 @@ load_dotenv()
 
 # FastAPI app
 app = FastAPI()
+
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 
 # Load Whisper model
 model = whisper.load_model("small")
@@ -36,11 +41,25 @@ SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.modify",
     "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.compose",
     'https://www.googleapis.com/auth/gmail.labels',
     "https://www.googleapis.com/auth/userinfo.email",
     "openid"
 ]
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
+def get_user_tokens(user_email):
+    doc = tokens_collection.find_one({"_id": user_email})
+    if not doc:
+        return None
+    return {
+        "token": doc["token"],
+        "refresh_token": doc["refresh_token"],
+        "token_uri": doc["token_uri"],
+        "client_id": doc["client_id"],
+        "client_secret": doc["client_secret"],
+        "scopes": doc["scopes"]
+    }
 
 @app.get("/")
 def read_root():
@@ -111,30 +130,78 @@ def transcribe_audio():
 @app.post("/send_email")
 def send_email_route():
     try:
+        print("🎙️ Starting email flow...")
+
+        # Step 1: Transcribe user's intent
         result = model.transcribe("command.wav")
         transcription = result["text"]
-        llm_response = process_with_llm(transcription)
+        print("📝 Transcribed command:", transcription)
 
+        # Step 2: LLM → generate email from that text
+        llm_response = process_with_llm(transcription)
         email_data = json.loads(llm_response)
+
         recipient = email_data.get("recipient")
         subject = email_data.get("subject", "No Subject")
         body = email_data.get("body", "")
 
-        user_email = os.getenv("SENDER_EMAIL")
-        user_tokens = tokens_collection.find_one({"_id": user_email})
-        if not user_tokens:
-            return JSONResponse(status_code=400, content={"error": f"Tokens not found for {user_email}."})
+        print("📧 Email composed:")
+        print("To:", recipient)
+        print("Subject:", subject)
+        print("Body:", body)
 
-        email_send_result = gmail_send_user(user_tokens, recipient, subject, body)
+        # Step 3: Speak the email & ask for decision
+        email_text_to_speak = f"To: {recipient}. Subject: {subject}. Body: {body}"
+        speak_email_flow(email_text_to_speak)
+
+        # Step 4: Record user's reply
+        print("🎤 Listening for your decision...")
+        record_until_silence("user_decision.wav")
+
+        decision_result = model.transcribe("user_decision.wav")
+        decision = decision_result["text"].strip().lower()
+        print("You said:", decision)
+
+        sender_email = SENDER_EMAIL #stored in env
+
+        # Step 5: Fetch user's Gmail tokens
+        user_tokens = get_user_tokens(sender_email)
+        if not user_tokens:
+            return JSONResponse(
+                status_code=401,
+                content={"error": "❌ User not authenticated. Visit /authorize first."}
+            )
+
+        # Step 6: Process decision
+        result = None
+        if any(word in decision for word in ["send", "send it", "go ahead", "yes send"]):
+            print("✅ Sending email...")
+            result = gmail_send_user(user_tokens, recipient, subject, body)
+
+        elif any(word in decision for word in ["draft", "save", "later", "not now"]):
+            print("📥 Saving as draft...")
+            result = save_to_drafts(user_tokens, recipient, subject, body)
+
+
+        elif "review" in decision:
+            print("👀 Opening for review...")
+            result = open_email_in_editor(email_data)
+
+        else:
+            print("❓ Unrecognized voice decision.")
+            result = "Unrecognized decision. Please speak clearly: 'send it', 'draft it', or 'review it'."
 
         return {
-            "transcription": transcription,
-            "llm_response": email_data,
-            "email_send_result": email_send_result
+            "original_command": transcription,
+            "email": email_data,
+            "user_decision": decision,
+            "action_result": result
         }
 
     except Exception as e:
+        print("🔥 Exception occurred:", e)
         return JSONResponse(status_code=500, content={"error": str(e)})
+
 
 @app.get("/get_metadata")
 def get_metadata():
